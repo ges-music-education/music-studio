@@ -342,6 +342,8 @@ button { font: inherit; color: inherit; }
 .thist { width: 100%; height: 90px; background: rgba(255,255,255,.05); border-radius: 8px; }
 .thist .band { fill: rgba(76,196,140,.18); } .thist .mid { stroke: rgba(255,255,255,.35); stroke-width: 1; } .thist .hist { fill: none; stroke: #F3B7BE; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
 .tmsg { margin: 0; font-size: 13px; color: #AEB6C8; text-align: center; }
+.tlinkbox { display: flex; gap: 8px; width: 100%; max-width: 440px; }
+.tlinkbox input { flex: 1; min-width: 0; font-family: var(--f-mono); font-size: 13px; color: #F3EFE6; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 8px 10px; }
 .a4 { font-family: var(--f-mono); font-size: 15px; }
 .dnow { text-align: center; }
 .dkeys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 440px; }
@@ -615,7 +617,7 @@ function markTabs() {
 function setHash(route) {
   try { history.replaceState(null, "", route ? "#" + HASH[route] : location.pathname + location.search); } catch (e) {}
 }
-function open(route) {
+function openRoute(route) {
   const r = ROUTES[route]; if (!r) return;
   current = route;
   $("homeView").hidden = true;
@@ -647,7 +649,7 @@ function goHome() {
   window.scrollTo({ top: 0 });
 }
 document.addEventListener("click", (ev) => {
-  const b = ev.target.closest("[data-go]"); if (b) open(b.dataset.go);
+  const b = ev.target.closest("[data-go]"); if (b) openRoute(b.dataset.go);
 });
 $("homeBtn").addEventListener("click", goHome);
 $("resetBtn").addEventListener("click", () => { $("resetConfirm").hidden = false; $("resetBtn").hidden = true; });
@@ -3259,7 +3261,23 @@ const PT = (() => {
   // so the tuner opens at its own address in a new tab instead.
   const EMBEDDED = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
   const TUNER_URL = "https://ges-music-education.github.io/music-studio/#tuner";
-  function openTunerTab() { const w = window.open(TUNER_URL, "_blank", "noopener"); const m = $p("tMsg"); if (m) m.textContent = "The tuner opened in a new tab. If nothing happened, allow pop-ups for this site or use the link below."; return w; }
+  function openTunerTab() {
+    // without "noopener" window.open reports whether the tab really opened
+    let w = null;
+    try { w = window.open(TUNER_URL, "_blank"); } catch (e) { w = null; }
+    const m = $p("tMsg"), box = $p("tLinkBox");
+    if (w) { try { w.opener = null; } catch (e) {} if (m) m.textContent = "The tuner opened in a new tab."; if (box) box.hidden = true; }
+    else { if (m) m.textContent = "This website doesn't allow the tuner to open a new tab. Copy the link below and paste it into a new browser tab."; if (box) { box.hidden = false; const inp = $p("tLinkUrl"); inp.focus(); inp.select(); } }
+    return w;
+  }
+  function copyTunerLink() {
+    const inp = $p("tLinkUrl"), btn = $p("tLinkCopy");
+    const done = () => { btn.textContent = "Copied"; setTimeout(() => (btn.textContent = "Copy link"), 1800); };
+    inp.focus(); inp.select(); inp.setSelectionRange(0, inp.value.length);
+    let ok = false; try { ok = document.execCommand("copy"); } catch (e) {}
+    if (ok) return done();
+    if (navigator.clipboard) navigator.clipboard.writeText(TUNER_URL).then(done, () => { btn.textContent = "Select and copy"; });
+  }
   function chips(name, opts, cur) { return opts.map(([v, l]) => `<button type="button" class="chip" data-${name}="${v}" aria-pressed="${String(v) === String(cur)}">${l}</button>`).join(""); }
   function build() {
     if (built) return; built = true;
@@ -3317,7 +3335,7 @@ const PT = (() => {
             <svg viewBox="0 0 600 90" class="thist" preserveAspectRatio="none" aria-hidden="true"><rect id="tBand" class="band" x="0" y="40" width="600" height="10"/><line x1="0" y1="45" x2="600" y2="45" class="mid"/><path id="tHistLine" class="hist" d=""/></svg>
             <p class="hint">The line shows the last few seconds of pitch. Keep it inside the green band for steady long tones.</p>
             <div class="m-go"><button type="button" class="bigbtn" id="tStart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg><span>Start tuner</span></button></div>
-            <p class="tmsg" id="tMsg">Uses your microphone. Nothing is recorded or sent anywhere.</p>
+            <p class="tmsg" id="tMsg">Uses your microphone. Nothing is recorded or sent anywhere.</p><div class="tlinkbox" id="tLinkBox" hidden><input id="tLinkUrl" type="text" readonly aria-label="Tuner link" value="https://ges-music-education.github.io/music-studio/#tuner"><button type="button" class="btn" id="tLinkCopy">Copy link</button></div>
           </div>
           <div class="m-side">
             <div class="mcard"><h4>Reference pitch</h4><div class="nums"><button type="button" class="btn" data-a4="-1">−</button><b class="a4">A4 = <span id="a4v"></span> Hz</b><button type="button" class="btn" data-a4="1">+</button></div><p class="hint">Most groups tune to 440. Some orchestras use 441 or 442.</p></div>
@@ -3386,6 +3404,8 @@ const PT = (() => {
     chipGroup("tTol", "tol", (v) => { T.tol = +v; store.set("tuner", T); const p = $p("tPanel"); const svg = p.querySelector(".tmeter"); svg.outerHTML = meterSvg(); });
     chipGroup("tGate", "gate", (v) => { T.gate = +v; store.set("tuner", T); });
     $p("tStart").addEventListener("click", () => (tStream ? tStop() : tStart()));
+    $p("tLinkCopy").addEventListener("click", copyTunerLink);
+    $p("tLinkUrl").addEventListener("focus", (e) => e.target.select());
     // ---- drone wiring
     const saveD = () => store.set("drone", D);
     $p("dOct").textContent = D.oct;
@@ -3406,7 +3426,7 @@ const PT = (() => {
     if (EMBEDDED) {
       $p("tStart").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span>Open the tuner</span>';
       $p("tStatus").textContent = "The tuner opens in its own tab.";
-      $p("tMsg").innerHTML = 'Web pages inside other sites can\'t use the microphone, so the tuner opens in its own tab. <a href="' + TUNER_URL + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Open the tuner</a>';
+      $p("tMsg").innerHTML = 'Web pages inside other sites can\'t use the microphone, so the tuner opens in its own tab.';
     }
     document.addEventListener("keydown", (e) => {
       if ($p("ptView").hidden || tab !== "metro") return;
@@ -3488,7 +3508,7 @@ function renderGloss() {
   $("gaz").hidden = !!words.length;
 }
 function openLesson(id) {
-  open("lessons");
+  openRoute("lessons");
   const go = () => { const f = frames.theory; try { f.contentWindow.selectLesson(id, 0); } catch (e) {} };
   const f = frames.theory;
   if (f && f._ready) setTimeout(go, 0); else if (f) f._queue.push(() => setTimeout(go, 0));
@@ -3498,7 +3518,7 @@ function openLesson(id) {
 (function boot() {
   const h = (location.hash || "").slice(1);
   const route = Object.keys(HASH).find((k) => HASH[k] === h) || ({ fingering: "fing" })[h];
-  if (route) open(route);
-  else if (h === "tuner") { open("tools"); PT.open("tuner"); try { history.replaceState(null, "", "#tuner"); } catch (e) {} }
+  if (route) openRoute(route);
+  else if (h === "tuner") { openRoute("tools"); PT.open("tuner"); try { history.replaceState(null, "", "#tuner"); } catch (e) {} }
 })();
 </script>
