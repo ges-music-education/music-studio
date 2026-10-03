@@ -167,7 +167,16 @@ button { font: inherit; color: inherit; }
 .ip-in { max-width: 1180px; }
 .ip-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; align-items: start; }
 .ip-list { position: sticky; top: 0; max-height: calc(100vh - 120px); overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 14px; }
-.ipgrp h3 { margin: 0 0 4px; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.ip-list { gap: 6px !important; }
+.ipgrp { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.ipgrp summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 9px 11px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--ink); border-radius: 10px; user-select: none; }
+.ipgrp summary::-webkit-details-marker { display: none; }
+.ipgrp summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; flex: none; margin-right: 2px; }
+.ipgrp[open] summary::before { transform: rotate(45deg); }
+.ipgrp summary:hover { background: var(--surface-2); }
+.ipgrp summary span { flex: 1; min-width: 0; }
+.ipgrp summary small { font-family: var(--f-mono); font-size: 11px; font-weight: 500; color: var(--muted); }
+.ipgrp ul { padding: 0 6px 8px !important; }
 .ipgrp ul { list-style: none; margin: 0; padding: 0; }
 .ipitem { width: 100%; text-align: left; border: 0; background: transparent; border-radius: 7px; padding: 5px 9px; cursor: pointer; font-size: 14px; color: var(--ink); }
 .ipitem:hover { background: var(--surface-2); }
@@ -2822,7 +2831,9 @@ function ipLabel(p, ax, ay, ex, ey, tx, ty, anchor, text, badge, elbow) {
 function ipBuild() {
   if (ipState.built) return;
   ipState.built = true;
-  $("ipList").innerHTML = IP.LIST.map(([fam, items]) => `<div class="ipgrp"><h3>${fam}</h3><ul>${items.map(([id, name]) => `<li><button type="button" class="ipitem" data-ip="${id}">${name}</button></li>`).join("")}</ul></div>`).join("");
+  $("ipList").innerHTML = IP.LIST.map(([fam, items]) => `<details class="ipgrp"><summary><span>${fam}</span><small>${items.length}</small></summary><ul>${items.map(([id, name]) => `<li><button type="button" class="ipitem" data-ip="${id}">${name}</button></li>`).join("")}</ul></details>`).join("");
+  // one family open at a time keeps the list short
+  $("ipList").querySelectorAll("details").forEach((d) => d.addEventListener("toggle", () => { if (d.open) $("ipList").querySelectorAll("details").forEach((o) => { if (o !== d) o.open = false; }); }));
   $("ipSelect").innerHTML = IP.LIST.map(([fam, items]) => `<optgroup label="${fam}">${items.map(([id, name]) => `<option value="${id}">${name}</option>`).join("")}</optgroup>`).join("");
   $("ipList").addEventListener("click", (e) => { const b = e.target.closest("[data-ip]"); if (b) ipOpen(b.dataset.ip); });
   $("ipSelect").addEventListener("change", (e) => ipOpen(e.target.value));
@@ -2855,7 +2866,10 @@ function ipRender(keepQ) {
   const quiz = ipState.mode === "quiz";
   $("ipModes").querySelectorAll("[data-m]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.m === ipState.mode)));
   $("ipQuizBar").hidden = !quiz; $("ipLearnBar").hidden = quiz; $("ipQuizArea").hidden = !quiz;
-  document.querySelectorAll(".ipitem").forEach((b) => b.setAttribute("aria-current", String(b.dataset.ip === (quiz && ipState.q ? ipState.q.inst : ipState.id))));
+  const curId = quiz && ipState.q ? ipState.q.inst : ipState.id;
+  document.querySelectorAll(".ipitem").forEach((b) => b.setAttribute("aria-current", String(b.dataset.ip === curId)));
+  const curBtn = $("ipList").querySelector(`[data-ip="${curId}"]`);
+  if (curBtn && ipState.openFor !== curId) { ipState.openFor = curId; curBtn.closest("details").open = true; }
   $("ipSelect").value = quiz && ipState.q ? ipState.q.inst : ipState.id;
   if (quiz) { if (ipState.q) ipDrawQ(); return; }
   const d = IP.get(ipState.id);
