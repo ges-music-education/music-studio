@@ -142,6 +142,13 @@ button { font: inherit; color: inherit; }
 .gaz button { border: 0; background: transparent; font-family: var(--f-mono); font-size: 13px; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; color: var(--ink); }
 .gaz button:hover { background: var(--surface-2); }
 .gaz button:disabled { color: var(--line); cursor: default; background: transparent; }
+.gpager { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 22px 0 8px; }
+.gpager button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; min-width: 36px; height: 36px; padding: 0 10px; font: inherit; font-size: 14px; cursor: pointer; }
+.gpager button:hover:not(:disabled) { border-color: var(--muted); }
+.gpager button:disabled { opacity: .4; cursor: default; }
+.gpager button[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.gpg-nums { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.gpg-gap { color: var(--muted); padding: 0 2px; }
 .gcount { font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding-block: 12px 4px; }
 .gletter { scroll-margin-top: 150px; font-family: var(--f-display); font-weight: 600; font-size: 26px; color: var(--accent); margin: 18px 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
 .gentry { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: minmax(0, 230px) minmax(0, 1fr); gap: 4px 22px; }
@@ -504,6 +511,7 @@ button { font: inherit; color: inherit; }
         </div>
         <div class="gcount" id="gcount" aria-live="polite"></div>
         <div class="glist" id="glist"></div>
+        <nav class="gpager" id="gpager" aria-label="Glossary pages"></nav>
       </div>
     </div>
   </div>
@@ -3395,7 +3403,8 @@ const PT = (() => {
 })();
 
 const LESSON_TITLES = {"staff": "The Staff and Clefs", "values": "Note Values and Rests", "meter": "Meter and Time Signatures", "steps": "Half Steps, Whole Steps, and Accidentals", "major": "The Major Scale", "keys": "Key Signatures", "minor": "Minor Scales", "degrees": "Scale Degree Names", "intnum": "Interval Numbers", "intqual": "Interval Quality", "intinv": "Inverting Intervals", "triads": "Triads", "inversions": "Inversions and Figured Bass", "sevenths": "Seventh Chords", "roman": "Diatonic Chords and Roman Numerals", "cadences": "Cadences"};
-const gstate = { q: "", cat: "all", built: false };
+const gstate = { q: "", cat: "all", built: false, page: 0 };
+const GPER = 25;
 const strip = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const escH = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const sortKey = (t) => strip(t).replace(/^[^a-z0-9]+/, "");
@@ -3409,15 +3418,17 @@ function hl(text, q) {
 function openGlossary() {
   if (!gstate.built) {
     $("gcats").innerHTML = [["all", "All topics"], ...GLOSS_CATS].map(([k, l]) => `<button type="button" class="gcat" data-cat="${k}" aria-pressed="${k === "all"}">${l}</button>`).join("");
-    $("gcats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; gstate.cat = b.dataset.cat; $("gcats").querySelectorAll(".gcat").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); renderGloss(); });
-    $("gq").addEventListener("input", (e) => { gstate.q = e.target.value.trim(); renderGloss(); });
-    $("gaz").addEventListener("click", (e) => { const b = e.target.closest("[data-l]"); if (!b) return; const el = document.getElementById("gl-" + b.dataset.l); if (el) el.scrollIntoView({ block: "start", behavior: "smooth" }); });
+    $("gcats").addEventListener("click", (e) => { const b = e.target.closest("[data-cat]"); if (!b) return; gstate.cat = b.dataset.cat; gstate.page = 0; $("gcats").querySelectorAll(".gcat").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); renderGloss(); });
+    $("gq").addEventListener("input", (e) => { gstate.q = e.target.value.trim(); gstate.page = 0; renderGloss(); });
+    $("gpager").addEventListener("click", (e) => { const b = e.target.closest("[data-pg]"); if (!b || b.disabled) return; gstate.page = +b.dataset.pg; renderGloss(); glossTop(); });
+    $("gaz").addEventListener("click", (e) => { const b = e.target.closest("[data-l]"); if (!b) return; const i = gstate.first[b.dataset.l]; if (i === undefined) return; gstate.page = Math.floor(i / GPER); renderGloss(); const el = document.getElementById("gl-" + b.dataset.l); if (el) el.scrollIntoView({ block: "start", behavior: "smooth" }); });
     $("glist").addEventListener("click", (e) => { const b = e.target.closest("[data-lesson]"); if (b) openLesson(b.dataset.lesson); });
     gstate.built = true;
   }
   renderGloss();
   window.gesCount("glossary");
 }
+function glossTop() { const el = $("gcount"); if (el) el.scrollIntoView({ block: "start" }); }
 function renderGloss() {
   const q = strip(gstate.q);
   const words = q.split(/\s+/).filter(Boolean);
@@ -3426,14 +3437,28 @@ function renderGloss() {
   if (words.length) list.sort((a, b) => (sortKey(b.term).startsWith(q) - sortKey(a.term).startsWith(q)) || sortKey(a.term).localeCompare(sortKey(b.term)));
   const catName = Object.fromEntries(GLOSS_CATS);
   const letters = new Set();
+  gstate.first = {};
+  if (!words.length) list.forEach((g, i) => { const L = sortKey(g.term)[0].toUpperCase(); if (!letters.has(L)) { letters.add(L); gstate.first[L] = i; } });
+  const pages = Math.max(1, Math.ceil(list.length / GPER));
+  gstate.page = Math.min(gstate.page, pages - 1);
+  const start = gstate.page * GPER, shown = list.slice(start, start + GPER);
   let html = "", cur = "";
-  list.forEach((g) => {
+  shown.forEach((g, k) => {
     const L = words.length ? "" : sortKey(g.term)[0].toUpperCase();
-    if (L && L !== cur) { cur = L; letters.add(L); html += `<h3 class="gletter" id="gl-${L}">${L}</h3>`; }
+    if (L && L !== cur) { cur = L; html += `<h3 class="gletter"${gstate.first[L] === start + k ? ` id="gl-${L}"` : ""}>${L}</h3>`; }
     html += `<dl class="gentry"><dt>${hl(g.term, gstate.q)}${g.lang ? `<span class="lang">${escH(g.lang)}</span>` : ""}</dt><dd>${hl(g.def, gstate.q)}<div class="gmeta"><span class="gtag">${catName[g.cat]}</span>${g.lesson && LESSON_TITLES[g.lesson] ? `<button type="button" class="glink" data-lesson="${g.lesson}">Lesson: ${escH(LESSON_TITLES[g.lesson])}</button>` : ""}</div></dd></dl>`;
   });
   $("glist").innerHTML = html || `<p class="gempty">No terms match “${escH(gstate.q)}”. Try a shorter word, or choose All topics.</p>`;
-  $("gcount").textContent = `${list.length} term${list.length === 1 ? "" : "s"}${gstate.cat !== "all" ? " in " + catName[gstate.cat] : ""}${words.length ? " matching your search" : ""}`;
+  const n = list.length, fmt = (x) => x.toLocaleString("en-US");
+  $("gcount").textContent = (n > GPER ? `Showing ${fmt(start + 1)}–${fmt(start + shown.length)} of ` : "") + `${fmt(n)} term${n === 1 ? "" : "s"}${gstate.cat !== "all" ? " in " + catName[gstate.cat] : ""}${words.length ? " matching your search" : ""}`;
+  // page buttons: first, last, and the pages around the current one
+  const pg = gstate.page, nums = [];
+  for (let i = 0; i < pages; i++) if (i === 0 || i === pages - 1 || Math.abs(i - pg) <= 2) nums.push(i);
+  let pb = `<button type="button" class="gpg-step" data-pg="${pg - 1}" ${pg === 0 ? "disabled" : ""}>‹ Previous</button><span class="gpg-nums">`;
+  nums.forEach((i, j) => { if (j && i - nums[j - 1] > 1) pb += `<span class="gpg-gap">…</span>`; pb += `<button type="button" data-pg="${i}" ${i === pg ? 'aria-current="page"' : ""} aria-label="Page ${i + 1}">${i + 1}</button>`; });
+  pb += `</span><button type="button" class="gpg-step" data-pg="${pg + 1}" ${pg >= pages - 1 ? "disabled" : ""}>Next ›</button>`;
+  $("gpager").innerHTML = pages > 1 ? pb : "";
+  $("gpager").hidden = pages <= 1;
   $("gaz").innerHTML = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((L) => `<button type="button" data-l="${L}" ${letters.has(L) ? "" : "disabled"} aria-label="Jump to ${L}">${L}</button>`).join("");
   $("gaz").hidden = !!words.length;
 }
