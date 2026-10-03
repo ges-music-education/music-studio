@@ -371,7 +371,7 @@ button { font: inherit; color: inherit; }
       <div>
         <div class="org">Guardian Educational Services</div>
         <h1>Music <em>Trainer</em></h1>
-        <p>Lessons, drills, sight-reading, rhythm practice, a metronome and tuner, and reference pages, all in one place for students, ensembles and directors.</p>
+        <p>Lessons, drills, sight-reading, rhythm practice, a metronome and drone tones, and reference pages, all in one place for students, ensembles and directors.</p>
         <p class="devnote"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Designed for desktop and laptop web browsers.</p>
       </div>
     </div>
@@ -411,8 +411,8 @@ button { font: inherit; color: inherit; }
       <div class="sect-head"><span class="k">Tools</span><h2>Practice room</h2><p>Keep steady time, check your tuning and play against a drone.</p></div>
       <div class="tiles one">
         <button class="tile" type="button" data-go="tools">
-          <span class="art"><svg viewBox="0 0 180 90" aria-hidden="true"><path d="M30,80 L46,14 L62,14 L78,80 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><line x1="54" y1="70" x2="68" y2="22" stroke="#C8172C" stroke-width="2.6" stroke-linecap="round"/><circle cx="66" cy="30" r="4" fill="#C8172C"/><path d="M100,62 A34,34 0 0 1 168,62" fill="none" stroke="currentColor" stroke-width="2.4"/><line x1="134" y1="62" x2="146" y2="34" stroke="#1E7A4E" stroke-width="2.6" stroke-linecap="round"/><circle cx="134" cy="62" r="4" fill="currentColor"/><text x="134" y="84" font-family="IBM Plex Mono, monospace" font-size="10" fill="currentColor" text-anchor="middle">A 440</text></svg></span>
-          <span class="txt"><h3>Metronome, Tuner &amp; Drones</h3><p>A full-featured metronome with accents, subdivisions, a tempo trainer and silent measures, a microphone tuner, and drone tones for tuning chords and scales.</p><span class="meta"><span>Metronome · Tuner · Drones</span><span class="go">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span></span>
+          <span class="art"><svg viewBox="0 0 180 90" aria-hidden="true"><path d="M30,80 L46,14 L62,14 L78,80 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><line x1="54" y1="70" x2="68" y2="22" stroke="#C8172C" stroke-width="2.6" stroke-linecap="round"/><circle cx="66" cy="30" r="4" fill="#C8172C"/><path d="M100,38 H110 L124,26 V70 L110,58 H100 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M134,36 Q142,48 134,60" fill="none" stroke="#C8172C" stroke-width="2.4" stroke-linecap="round"/><path d="M143,28 Q156,48 143,68" fill="none" stroke="#C8172C" stroke-width="2.4" stroke-linecap="round" opacity=".75"/><path d="M152,20 Q170,48 152,76" fill="none" stroke="#C8172C" stroke-width="2.4" stroke-linecap="round" opacity=".5"/></svg></span>
+          <span class="txt"><h3>Metronome &amp; Drones</h3><p>A full-featured metronome with accents, subdivisions, a tempo trainer and silent measures, plus drone tones for tuning scales, chords and long tones.</p><span class="meta"><span>Metronome · Drones</span><span class="go">Open <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></span></span>
         </button>
       </div>
     </section>
@@ -465,7 +465,7 @@ button { font: inherit; color: inherit; }
         <button class="tab" type="button" data-go="drills">Drills</button>
         <button class="tab" type="button" data-go="sight">Sight-Reading</button>
         <button class="tab" type="button" data-go="rhythm">Rhythm</button>
-        <button class="tab" type="button" data-go="tools">Metronome &amp; Tuner</button>
+        <button class="tab" type="button" data-go="tools">Metronome &amp; Drones</button>
         <button class="tab" type="button" data-go="fing">Fingering Chart</button>
         <button class="tab" type="button" data-go="parts">Instrument Parts</button>
         <button class="tab" type="button" data-go="glossary">Glossary</button>
@@ -545,7 +545,7 @@ const ROUTES = {
   fing:    { src: "fing", title: "Instrument Fingering Chart" },
   teacher: { src: "theory", title: "Teacher", enter: (w) => w.openTeacher && w.openTeacher() },
   glossary: { src: null, title: "Glossary" },
-  tools: { src: null, title: "Metronome, Tuner & Drones" },
+  tools: { src: null, title: "Metronome & Drones" },
   parts: { src: null, title: "Instrument Parts" },
 };
 // Tools listed here are hidden: no home card, no tab, and their link goes to the home page.
@@ -3259,6 +3259,8 @@ const PT = (() => {
   let built = false, tab = store.get("tab", "metro");
   // Inside another website's frame (such as a Wix page) the microphone is blocked,
   // so the tuner opens at its own address in a new tab instead.
+  // The tuner is hidden for now. Its code stays in place; set this to true to bring it back.
+  const SHOW_TUNER = false;
   const EMBEDDED = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
   const TUNER_URL = "https://ges-music-education.github.io/music-studio/#tuner";
   function openTunerTab() {
@@ -3283,7 +3285,7 @@ const PT = (() => {
     if (built) return; built = true;
     const root = $p("ptView");
     root.innerHTML = `<div class="pt-in">
-      <div class="gloss-head"><div class="k">Practice</div><h2>Metronome, Tuner &amp; Drones</h2><p>Keep steady time, check your intonation, and practice against a sustained pitch.</p></div>
+      <div class="gloss-head"><div class="k">Practice</div><h2>${SHOW_TUNER ? "Metronome, Tuner &amp; Drones" : "Metronome &amp; Drones"}</h2><p>${SHOW_TUNER ? "Keep steady time, check your intonation, and practice against a sustained pitch." : "Keep steady time, and tune scales, chords and long tones against a sustained pitch."}</p></div>
       <div class="pt-tabs" role="tablist"><button type="button" role="tab" data-tab="metro">Metronome</button><button type="button" role="tab" data-tab="tuner">Tuner</button><button type="button" role="tab" data-tab="drone">Drone Tones</button></div>
 
       <section class="ptp" id="ptMetro">
@@ -3422,6 +3424,14 @@ const PT = (() => {
     chipGroup("dOrder", "order", (v) => { D.cycle.order = v; saveD(); });
     $p("dSecs").addEventListener("change", (e) => { D.cycle.secs = Math.max(4, Math.min(300, +e.target.value || 20)); e.target.value = D.cycle.secs; saveD(); if (dOn) dStart(); });
     // ---- tabs + keys
+    if (!SHOW_TUNER) {
+      // hide the tuner, and move the settings the drones share with it onto the Drone Tones tab
+      root.querySelector('[data-tab="tuner"]').hidden = true;
+      const side = $p("ptDrone").querySelector(".m-side");
+      const note = [...side.children].find((c) => /Shared settings/.test(c.textContent));
+      ["a4v", "tTrans", "tNames"].forEach((id) => side.insertBefore($p(id).closest(".mcard"), note || null));
+      if (note) note.remove();
+    }
     root.querySelector(".pt-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; showTab(b.dataset.tab); if (b.dataset.tab === "tuner" && EMBEDDED) openTunerTab(); });
     if (EMBEDDED) {
       $p("tStart").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span>Open the tuner</span>';
@@ -3438,6 +3448,7 @@ const PT = (() => {
     });
   }
   function showTab(t) {
+    if (!SHOW_TUNER && t === "tuner") t = "metro";
     tab = t; store.set("tab", t);
     document.querySelectorAll(".pt-tabs [data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
     $p("ptMetro").hidden = t !== "metro"; $p("ptTuner").hidden = t !== "tuner"; $p("ptDrone").hidden = t !== "drone";
@@ -3519,6 +3530,6 @@ function openLesson(id) {
   const h = (location.hash || "").slice(1);
   const route = Object.keys(HASH).find((k) => HASH[k] === h) || ({ fingering: "fing" })[h];
   if (route) openRoute(route);
-  else if (h === "tuner") { openRoute("tools"); PT.open("tuner"); try { history.replaceState(null, "", "#tuner"); } catch (e) {} }
+  else if (h === "tuner") { openRoute("tools"); PT.open("tuner"); }
 })();
 </script>
