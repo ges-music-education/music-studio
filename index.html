@@ -534,7 +534,7 @@ const ROUTES = {
 const HIDDEN_TOOLS = [];
 HIDDEN_TOOLS.forEach((k) => { delete ROUTES[k]; document.querySelectorAll(`[data-go="${k}"]`).forEach((el) => el.remove()); });
 document.querySelectorAll(".tiles").forEach((g) => g.classList.toggle("one", g.children.length === 1));
-const HASH = { lessons: "lessons", drills: "drills", sight: "sightreading", rhythm: "rhythm", fing: "fingering", teacher: "teacher", glossary: "glossary", tools: "tools", parts: "instrument-parts" };
+const HASH = { lessons: "lessons", drills: "drills", sight: "sightreading", rhythm: "rhythm", fing: "fingerchart", teacher: "teacher", glossary: "glossary", tools: "tools", parts: "instrument-parts" };
 const frames = {};      // src key -> iframe
 let current = null;
 let theoryMode = null;  // "lessons" | "drills", as reported by the embedded Theory Drills
@@ -3447,7 +3447,7 @@ function openLesson(id) {
 // deep links: #lessons, #drills, #sightreading, #rhythm, #fingering, #teacher, #glossary
 (function boot() {
   const h = (location.hash || "").slice(1);
-  const route = Object.keys(HASH).find((k) => HASH[k] === h);
+  const route = Object.keys(HASH).find((k) => HASH[k] === h) || ({ fingering: "fing" })[h];
   if (route) open(route);
 })();
 </script>
