@@ -3133,11 +3133,12 @@ const PT = (() => {
   }
   async function tStart() {
     const msg = $p("tMsg");
-    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { msg.textContent = "This browser can't use a microphone. Try Chrome, Edge, Safari or Firefox on the GES website."; return; }
+    if (EMBEDDED) { openTunerTab(); return; }
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) { msg.textContent = "This browser can't use a microphone. Try a current version of Chrome, Edge, Safari or Firefox."; return; }
     try {
       tStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
     } catch (e) {
-      msg.textContent = /claude|claudeusercontent/.test(location.hostname + document.referrer) || location.protocol === "file:" ? "The microphone isn't available in this preview. The tuner works when the Music Trainer is opened on the GES website." : "Microphone access was blocked. Allow the microphone for this site in your browser settings, then press Start again.";
+      msg.textContent = /claude|claudeusercontent/.test(location.hostname + document.referrer) || location.protocol === "file:" ? "The microphone isn't available in this preview. The tuner works when the Music Trainer is opened at its own web address." : "Microphone access was blocked. Allow the microphone for this site in your browser settings, then press Start again.";
       return;
     }
     audio();
@@ -3254,6 +3255,11 @@ const PT = (() => {
      Page
      ============================================================ */
   let built = false, tab = store.get("tab", "metro");
+  // Inside another website's frame (such as a Wix page) the microphone is blocked,
+  // so the tuner opens at its own address in a new tab instead.
+  const EMBEDDED = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
+  const TUNER_URL = "https://ges-music-education.github.io/music-studio/#tuner";
+  function openTunerTab() { const w = window.open(TUNER_URL, "_blank", "noopener"); const m = $p("tMsg"); if (m) m.textContent = "The tuner opened in a new tab. If nothing happened, allow pop-ups for this site or use the link below."; return w; }
   function chips(name, opts, cur) { return opts.map(([v, l]) => `<button type="button" class="chip" data-${name}="${v}" aria-pressed="${String(v) === String(cur)}">${l}</button>`).join(""); }
   function build() {
     if (built) return; built = true;
@@ -3396,7 +3402,12 @@ const PT = (() => {
     chipGroup("dOrder", "order", (v) => { D.cycle.order = v; saveD(); });
     $p("dSecs").addEventListener("change", (e) => { D.cycle.secs = Math.max(4, Math.min(300, +e.target.value || 20)); e.target.value = D.cycle.secs; saveD(); if (dOn) dStart(); });
     // ---- tabs + keys
-    root.querySelector(".pt-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
+    root.querySelector(".pt-tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (!b) return; showTab(b.dataset.tab); if (b.dataset.tab === "tuner" && EMBEDDED) openTunerTab(); });
+    if (EMBEDDED) {
+      $p("tStart").innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg><span>Open the tuner</span>';
+      $p("tStatus").textContent = "The tuner opens in its own tab.";
+      $p("tMsg").innerHTML = 'Web pages inside other sites can\'t use the microphone, so the tuner opens in its own tab. <a href="' + TUNER_URL + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">Open the tuner</a>';
+    }
     document.addEventListener("keydown", (e) => {
       if ($p("ptView").hidden || tab !== "metro") return;
       const tag = (e.target.tagName || "").toLowerCase(); if (["input", "select", "textarea"].includes(tag)) return;
@@ -3483,10 +3494,11 @@ function openLesson(id) {
   if (f && f._ready) setTimeout(go, 0); else if (f) f._queue.push(() => setTimeout(go, 0));
 }
 
-// deep links: #lessons, #drills, #sightreading, #rhythm, #fingering, #teacher, #glossary
+// deep links: #lessons, #drills, #sightreading, #rhythm, #fingerchart, #teacher, #glossary, #tools, #tuner, #instrument-parts
 (function boot() {
   const h = (location.hash || "").slice(1);
   const route = Object.keys(HASH).find((k) => HASH[k] === h) || ({ fingering: "fing" })[h];
   if (route) open(route);
+  else if (h === "tuner") { open("tools"); PT.open("tuner"); try { history.replaceState(null, "", "#tuner"); } catch (e) {} }
 })();
 </script>
