@@ -1875,28 +1875,47 @@ const IP = (() => {
      WOODWINDS
      ============================================================ */
   function flute(pic) {
-    const L = pic ? 400 : 580, hj = pic ? 140 : 170, fj = pic ? null : 470;
+    // drawn upright, headjoint at the top, keys facing the viewer
+    const cx = 70, k = pic ? 0.72 : 1, Y = (y) => 10 + (y - 10) * k;
+    const bodyTop = Y(190), bodyEnd = pic ? Y(520) : Y(520), foot = pic ? null : Y(680);
     let s = "";
-    s += g("crown", rect(12, 30, 10, 14, "s", 3));
-    s += g("headjoint", path(`M22,31 L${hj},30 L${hj},44 L22,43 Z`, "s"));
-    s += g("lipplate", ell(70, 30, 15, 6, "s") + ell(70, 30, 15, 6, "n"));
-    s += g("embouchure", ell(70, 30, 5, 3, "k"));
-    s += g("body", rect(hj, 30, (fj || L) - hj, 14, "s") + line(hj, 30, hj, 44, "joint"));
-    const keys = pic ? [190, 215, 240, 280, 305, 330] : [215, 245, 275, 325, 355, 385, 420];
-    s += g("keys", keys.map((x) => circ(x, 37, 6.5, "s") + circ(x, 37, 2.2, "n")).join("") + (pic ? "" : circ(445, 37, 4, "s")));
-    s += g("rods", line(hj + 10, 47, (fj || L) - 8, 47, "rod"));
-    if (fj) s += g("footjoint", rect(fj, 30, L - fj, 14, "s") + line(fj, 30, fj, 44, "joint") + [500, 530, 556].map((x) => circ(x, 37, 6, "s")).join("") + line(fj + 5, 47, L - 5, 47, "rod"));
+    s += g("crown", rect(cx - 7, Y(10), 14, Y(22) - Y(10), "s", 3));
+    s += g("headjoint", rect(cx - 6, Y(22), 12, bodyTop - Y(22), "s"));
+    s += g("lipplate", ell(cx, Y(82), 10, 17 * k, "s"));
+    s += g("embouchure", ell(cx, Y(82), 3.4, 6.5 * k, "k"));
+    s += g("body", rect(cx - 7, bodyTop, 14, bodyEnd - bodyTop, "s") + line(cx - 7, bodyTop, cx + 7, bodyTop, "joint"));
+    const ring = (y) => circ(cx, Y(y), 6.2, "s") + (pic ? "" : circ(cx, Y(y), 2.3, "n"));
+    const plate = (y) => circ(cx, Y(y), 6.2, "s");
+    s += g("rods", line(cx + 10, Y(215), cx + 10, bodyEnd - 6, "rod"));
+    s += g("thumb", path(`M${cx - 7},${Y(250)} L${cx - 18},${Y(254)} L${cx - 18},${Y(278)} L${cx - 7},${Y(281)}`, "keyl") + rect(cx - 24, Y(256), 8, Y(276) - Y(256), "s", 3));
+    s += g("lhkeys", circ(cx, Y(228), 4, "s") + plate(255) + ring(287) + ring(319));
+    s += g("gsharp", path(`M${cx + 7},${Y(334)} L${cx + 20},${Y(338)}`, "keyl") + rect(cx + 17, Y(333), 14, 9, "s", 4) + circ(cx, Y(344), 3.6, "s"));
+    s += g("trill", [366, 384].map((y) => circ(cx, Y(y), 3.2, "s") + path(`M${cx + 6},${Y(y)} L${cx + 16},${Y(y) - 2}`, "keyl") + rect(cx + 14, Y(y) - 5, 10, 6, "s", 2)).join(""));
+    s += g("rhkeys", ring(410) + ring(442) + ring(474));
+    s += g("dsharp", circ(cx, Y(500), 4, "s") + path(`M${cx + 7},${Y(500)} L${cx + 18},${Y(505)}`, "keyl") + rect(cx + 15, Y(500), 16, 10, "s", 4));
+    if (foot) {
+      s += g("footjoint", rect(cx - 7, bodyEnd, 14, foot - bodyEnd, "s") + line(cx - 7, bodyEnd, cx + 7, bodyEnd, "joint") + line(cx + 10, bodyEnd + 8, cx + 10, foot - 8, "rod") + [560, 600, 640].map((y) => circ(cx, Y(y), 5.5, "s")).join(""));
+      s += g("footkeys", path(`M${cx + 7},${Y(575)} L${cx + 20},${Y(580)}`, "keyl") + rect(cx + 17, Y(572), 15, 26, "s", 5) + circ(cx + 24.5, Y(578), 3, "n") + circ(cx + 24.5, Y(592), 3, "n"));
+    }
     const parts = [
-      ["crown", "Crown", "The cap at the end of the headjoint. It seals the end and protects the cork inside.", 17, 30],
-      ["headjoint", "Headjoint", "The top section the player blows across.", 120, 30],
-      ["lipplate", "Lip plate", "The curved plate where the lower lip rests.", 64, 25],
-      ["embouchure", "Embouchure hole", "The hole the player directs air across to make the sound.", 74, 31],
-      ["body", "Body", "The middle section that holds most of the keys.", hj + 25, 44],
-      ["keys", "Keys", "Covers for the tone holes. Pressing and lifting them changes the pitch.", keys[3], 31],
-      ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", keys[1] + 10, 47],
+      ["crown", "Crown", "The cap at the end of the headjoint. It seals the end and protects the cork inside.", cx + 7, Y(16)],
+      ["headjoint", "Headjoint", "The top section the player blows across.", cx - 6, Y(140)],
+      ["lipplate", "Lip plate", "The curved plate where the lower lip rests.", cx + 10, Y(70)],
+      ["embouchure", "Embouchure hole", "The hole the player directs air across to make the sound.", cx - 3, Y(84)],
+      ["body", "Body", "The middle section that holds most of the keys.", cx - 7, Y(370)],
+      ["thumb", "Thumb keys", "Two keys on the back for the left thumb: B and B♭ (the B♭ one is called the Briccialdi key).", cx - 24, Y(266)],
+      ["lhkeys", "Left-hand keys", pic ? "Covered keys for the left hand's first three fingers." : "Keys for the left hand's first three fingers. On open-hole flutes, the rings have a hole in the middle.", cx + 6, Y(255)],
+      ["gsharp", "G♯ key", "Played by the left pinky.", cx + 31, Y(337)],
+      ["trill", "Trill keys", "Two small keys worked by the right index finger, used for trills and some high notes.", cx + 24, Y(381)],
+      ["rhkeys", "Right-hand keys", "Keys for the right hand's first three fingers.", cx + 6, Y(442)],
+      ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", cx + 10, Y(300)],
+      ["dsharp", "E♭ key", "Played by the right pinky. It stays down for most notes.", cx + 31, Y(505)],
     ];
-    if (fj) parts.push(["footjoint", "Footjoint", "The short end section with keys for the lowest notes, played by the right pinky.", 530, 44]);
-    return { mode: "h", w: L + 20, h: 80, draw: () => s, parts, sub: pic ? "Half the size of the flute and sounds an octave higher than written. Same fingerings as the flute." : "Played sideways by blowing across the embouchure hole. Usually silver-plated or solid silver." };
+    if (foot) parts.push(
+      ["footjoint", "Footjoint", "The short end section with keys for the lowest notes.", cx - 7, Y(620)],
+      ["footkeys", "Footjoint pinky keys", "Low C♯ and low C keys for the right pinky, with rollers so the finger can slide between them. A B foot adds a low B key.", cx + 32, Y(585)],
+    );
+    return { mode: "v", w: 150, h: pic ? Y(520) + 14 : Y(680) + 14, draw: () => s, parts, sub: pic ? "Half the size of the flute and sounds an octave higher than written. Same fingerings as the flute, with no footjoint." : "Held sideways and played by blowing across the embouchure hole. Shown upright here so every key can be labeled." };
   }
   function clarinet() {
     const cx = 80;
@@ -1906,26 +1925,39 @@ const IP = (() => {
     s += g("ligature", rect(cx - 11, 54, 22, 10, "s", 2) + circ(cx + 14, 59, 3, "s"));
     s += g("barrel", path(`M${cx - 13},74 L${cx + 13},74 L${cx + 12},112 L${cx - 12},112 Z`, "k") + rect(cx - 14, 72, 28, 4, "s") + rect(cx - 13, 110, 26, 4, "s"));
     s += g("upper", rect(cx - 11, 114, 22, 178, "k"));
-    s += g("tonehole", [160, 192, 224].map((y) => circ(cx, y, 6, "s") + circ(cx, y, 3.2, "k")).join(""));
-    s += g("register", path(`M${cx + 11},128 L${cx + 24},132 L${cx + 24},152 L${cx + 11},150`, "keyl") + circ(cx + 24, 154, 3.5, "s"));
-    s += g("keys", rect(cx + 10, 245, 12, 6, "s", 2) + rect(cx + 10, 258, 12, 6, "s", 2) + rect(cx - 22, 400, 12, 6, "s", 2) + rect(cx - 22, 412, 12, 6, "s", 2) + rect(cx + 10, 405, 14, 6, "s", 2) + line(cx - 9, 140, cx - 9, 280, "rod") + line(cx - 9, 300, cx - 9, 420, "rod"));
     s += g("lower", rect(cx - 12, 292, 24, 140, "k") + rect(cx - 13, 290, 26, 4, "s"));
-    s += [330, 362, 394].map((y) => circ(cx, y, 6, "s") + circ(cx, y, 3.2, "k")).join("");
+    s += g("rods", line(cx - 9, 140, cx - 9, 286, "rod") + line(cx - 9, 298, cx - 9, 428, "rod") + line(cx + 9, 222, cx + 9, 268, "rod"));
+    s += g("tonehole", [168, 198, 228, 330, 362, 394].map((y) => circ(cx, y, 6, "s") + circ(cx, y, 3.2, "k")).join(""));
+    s += g("throat", rect(cx - 5, 128, 10, 8, "s", 3) + path(`M${cx - 11},146 L${cx - 20},144`, "keyl") + rect(cx - 27, 140, 9, 8, "s", 3));
+    s += g("register", path(`M${cx + 11},128 L${cx + 24},132 L${cx + 24},150 L${cx + 11},148`, "keyl") + circ(cx + 24, 152, 3.5, "s"));
+    s += g("thumbhole", circ(cx + 20, 172, 4.5, "s") + circ(cx + 20, 172, 2.2, "k"));
+    s += g("trill", [232, 242, 252, 262].map((y) => rect(cx + 11, y, 10, 7, "s", 2)).join(""));
+    s += g("lpinky", [254, 264, 274, 284].map((y) => rect(cx - 26, y, 15, 7, "s", 2)).join(""));
+    s += g("bridge", rect(cx + 7, 284, 7, 16, "s", 2));
+    s += g("rhside", [306, 316].map((y) => rect(cx - 22, y, 11, 6, "s", 2)).join(""));
     s += g("thumbrest", path(`M${cx + 12},318 L${cx + 22},318 L${cx + 22},334 L${cx + 12},334`, "keyl"));
+    s += g("rpinky", [398, 408, 418].map((y) => rect(cx + 12, y, 15, 7, "s", 2)).join("") + rect(cx + 12, 428 - 4, 11, 6, "s", 2));
     s += g("bell", path(`M${cx - 13},432 L${cx + 13},432 C${cx + 16},480 ${cx + 26},510 ${cx + 33},522 L${cx - 33},522 C${cx - 26},510 ${cx - 16},480 ${cx - 13},432 Z`, "k") + rect(cx - 34, 518, 68, 5, "s"));
     return {
-      mode: "v", w: 160, h: 540, draw: () => s, sub: "A single-reed woodwind, usually made of grenadilla wood. The B♭ clarinet is the most common.",
+      mode: "v", w: 170, h: 540, draw: () => s, sub: "A single-reed woodwind, usually made of grenadilla wood. The B♭ clarinet is the most common.",
       parts: [
         ["mouthpiece", "Mouthpiece", "Where the player's mouth goes. The reed vibrates against it.", cx + 7, 38],
         ["reed", "Reed", "A thin piece of cane that vibrates against the mouthpiece to make the sound.", cx - 8, 40],
         ["ligature", "Ligature", "The metal or fabric band that holds the reed in place.", cx + 14, 59],
         ["barrel", "Barrel", "The short section between mouthpiece and upper joint. Pulling it out slightly lowers the pitch for tuning.", cx - 12, 92],
-        ["upper", "Upper joint", "The section played by the left hand.", cx - 11, 260],
-        ["tonehole", "Tone holes (rings)", "Holes covered by the fingers. Metal rings around some of them move other keys.", cx + 6, 192],
-        ["register", "Register key", "Pressed with the left thumb to jump up to the upper register.", cx + 24, 154],
-        ["keys", "Keys", "Side and pinky keys for extra notes, joined by rods.", cx + 22, 248],
-        ["lower", "Lower joint", "The section played by the right hand.", cx - 12, 345],
+        ["throat", "Throat A and G♯ keys", "Two keys at the top of the upper joint, pressed by the left index finger for throat-tone A and G♯.", cx - 27, 144],
+        ["register", "Register key", "Pressed with the left thumb to jump up to the upper register.", cx + 24, 152],
+        ["thumbhole", "Thumb hole", "The open hole on the back covered by the left thumb.", cx + 24, 172],
+        ["tonehole", "Tone holes (rings)", "Holes covered by the fingers. The metal rings around them move other keys.", cx + 6, 198],
+        ["upper", "Upper joint", "The section played by the left hand.", cx - 11, 210],
+        ["trill", "Trill keys (side keys)", "Four keys on the side, pressed by the side of the right index finger for trills and throat-tone B♭.", cx + 21, 247],
+        ["lpinky", "Left-hand pinky keys", "Keys at the bottom of the upper joint for low E, F, F♯ and G♯ (and their twelfths). They let the pinkies alternate between hands.", cx - 26, 269],
+        ["bridge", "Bridge key", "Links the upper and lower joints so the keys work together. Line it up when you assemble.", cx + 14, 292],
+        ["rhside", "Right-hand side keys", "Two keys pressed by the side of the right index finger: the E♭/B♭ (sliver) key and the side F♯/C♯ key.", cx - 22, 312],
+        ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", cx - 9, 350],
         ["thumbrest", "Thumb rest", "Where the right thumb holds up the instrument.", cx + 22, 326],
+        ["lower", "Lower joint", "The section played by the right hand.", cx - 12, 375],
+        ["rpinky", "Right-hand pinky keys", "Keys at the bottom of the lower joint for low E, F, F♯ and A♭ (and their twelfths).", cx + 27, 412],
         ["bell", "Bell", "The flared end where the sound comes out.", cx + 26, 505],
       ],
     };
@@ -1939,21 +1971,35 @@ const IP = (() => {
     s += g("neck", path(`M48,32 C80,22 ${cx},50 ${cx},112 L${cx + 10},112 C${cx + 10},44 82,10 46,22 Z`, "s"));
     s += g("upper", rect(cx - 13, 112, 26, 170, "k") + rect(cx - 14, 110, 28, 4, "s"));
     s += g("lower", rect(cx - 14, 282, 28, 170, "k") + rect(cx - 15, 280, 30, 4, "s"));
-    s += g("keys", [150, 180, 210, 320, 350, 380].map((y) => circ(cx, y, 8, "s")).join("") + rect(cx + 13, 240, 16, 7, "s", 2) + rect(cx - 30, 420, 16, 7, "s", 2) + line(cx - 10, 140, cx - 10, 440, "rod"));
+    s += g("rods", line(cx - 10, 140, cx - 10, 440, "rod"));
+    s += g("register", path(`M${cx + 13},124 L${cx + 26},128 L${cx + 26},148 L${cx + 13},146`, "keyl") + circ(cx + 26, 150, 3.6, "s"));
+    s += g("lhkeys", [160, 190, 220].map((y) => circ(cx, y, 8, "s")).join(""));
+    s += g("trill", [232, 243, 254, 265].map((y) => rect(cx + 13, y, 12, 8, "s", 2)).join(""));
+    s += g("lpinky", [246, 257, 268].map((y) => rect(cx - 31, y, 18, 8, "s", 2)).join(""));
+    s += g("rhkeys", [320, 350, 380].map((y) => circ(cx, y, 8, "s")).join(""));
     s += g("thumbrest", path(`M${cx + 14},300 L${cx + 26},300 L${cx + 26},316 L${cx + 14},316`, "keyl"));
+    s += g("lowkeys", [436, 447].map((y) => rect(cx - 34, y, 20, 8, "s", 2)).join(""));
     s += g("bell", path(`M${cx - 14},452 L${cx - 14},470 C${cx - 14},520 ${cx + 40},525 ${cx + 52},480 C${cx + 60},450 ${cx + 62},420 ${cx + 70},398 L${cx + 26},398 C${cx + 34},420 ${cx + 30},450 ${cx + 26},470 C${cx + 20},496 ${cx + 14},492 ${cx + 14},470 L${cx + 14},452 Z`, "s") + ell(cx + 48, 398, 22, 5, "k"));
     s += g("peg", line(cx + 18, 505, cx + 18, 548, "pin") + rect(cx + 13, 500, 10, 8, "s", 2));
+    s += g("rpinky", [404, 415, 426].map((y) => rect(cx + 14, y, 18, 8, "s", 2)).join(""));
     return {
-      mode: "v", w: 200, h: 560, draw: () => s, sub: "Sounds an octave below the B♭ clarinet. Same fingerings, with a curved metal neck and an upturned bell.",
+      mode: "v", w: 210, h: 560, draw: () => s, sub: "Sounds an octave below the B♭ clarinet. Same fingerings, with a curved metal neck and an upturned bell. Many go down to low E♭ or low C.",
       parts: [
         ["mouthpiece", "Mouthpiece", "Larger than a clarinet mouthpiece but works the same way.", 30, 30],
         ["reed", "Reed", "A wide single reed held against the mouthpiece.", 24, 50],
         ["ligature", "Ligature", "Holds the reed on the mouthpiece.", 46, 30],
         ["neck", "Neck", "The curved metal tube that brings the mouthpiece to the player.", 92, 60],
-        ["upper", "Upper joint", "The left-hand section.", cx - 13, 250],
-        ["keys", "Keys", "Covered keys for every finger, joined by rods.", cx + 8, 180],
-        ["lower", "Lower joint", "The right-hand section.", cx - 14, 400],
+        ["register", "Register key", "Pressed with the left thumb to reach the upper register. Some bass clarinets have two or more register vents.", cx + 26, 150],
+        ["lhkeys", "Left-hand keys", "Covered plates for the left hand's first three fingers.", cx + 8, 190],
+        ["upper", "Upper joint", "The left-hand section.", cx - 13, 205],
+        ["trill", "Trill keys (side keys)", "Side keys for the right index finger, used for trills and throat-tone B♭.", cx + 25, 250],
+        ["lpinky", "Left-hand pinky keys", "Keys at the bottom of the upper joint for low E, F and F♯ (and their twelfths).", cx - 31, 261],
+        ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", cx - 10, 300],
         ["thumbrest", "Thumb rest", "Support for the right thumb.", cx + 26, 308],
+        ["rhkeys", "Right-hand keys", "Covered plates for the right hand's first three fingers.", cx + 8, 350],
+        ["lower", "Lower joint", "The right-hand section.", cx - 14, 370],
+        ["rpinky", "Right-hand pinky keys", "Keys at the bottom of the lower joint for low E, F, F♯ and A♭ (and their twelfths).", cx + 32, 415],
+        ["lowkeys", "Low keys (E♭, D, C)", "Extra keys for the lowest notes, worked by the thumbs or pinkies on models that reach low E♭ or low C.", cx - 34, 444],
         ["bell", "Bell", "The metal bell turns back up toward the player.", cx + 66, 410],
         ["peg", "Floor peg", "An adjustable spike that rests on the floor and holds the weight.", cx + 18, 535],
       ],
@@ -1966,50 +2012,76 @@ const IP = (() => {
     s += g("reed", path(`M${cx - 5},${rTop} L${cx + 5},${rTop} L${cx + 4},${rTop + 26} L${cx - 4},${rTop + 26} Z`, "reed") + rect(cx - 4, rTop + 26, 8, 12, "thread", 1) + rect(cx - 3.5, rTop + 38, 7, 8, "cork", 1));
     let topJ = rTop + 46;
     if (eh) { s += g("bocal", path(`M${cx - 2},${rTop + 46} C${cx - 4},${rTop + 70} ${cx + 4},${rTop + 80} ${cx + 2},${rTop + 104} L${cx + 6},${rTop + 104} C${cx + 8},${rTop + 80} ${cx},${rTop + 70} ${cx + 2},${rTop + 46} Z`, "s")); topJ = rTop + 104; }
+    const lowEnd = eh ? 410 : 420;
     s += g("upper", path(`M${cx - 8},${topJ} L${cx + 8},${topJ} L${cx + 11},250 L${cx - 11},250 Z`, "k") + rect(cx - 9, topJ - 3, 18, 4, "s"));
-    s += g("octave", path(`M${cx + 8},${topJ + 22} L${cx + 20},${topJ + 26} L${cx + 20},${topJ + 52}`, "keyl") + circ(cx + 20, topJ + 54, 3.4, "s") + path(`M${cx - 8},${topJ + 30} L${cx - 18},${topJ + 34} L${cx - 18},${topJ + 56}`, "keyl"));
-    s += g("keys", [topJ + 80, topJ + 104, 200, 300, 330, 360].map((y) => circ(cx, y, 5.5, "s") + circ(cx, y, 2.4, "k")).join("") + line(cx + 9, topJ + 40, cx + 9, 400, "rod") + rect(cx + 12, 390, 12, 5, "s", 2) + rect(cx - 24, 395, 12, 5, "s", 2));
-    s += g("lower", path(`M${cx - 11},252 L${cx + 11},252 L${cx + 13},${eh ? 410 : 420} L${cx - 13},${eh ? 410 : 420} Z`, "k") + rect(cx - 12, 249, 24, 4, "s"));
+    s += g("lower", path(`M${cx - 11},252 L${cx + 11},252 L${cx + 13},${lowEnd} L${cx - 13},${lowEnd} Z`, "k") + rect(cx - 12, 249, 24, 4, "s"));
+    s += g("rods", line(cx + 9, topJ + 40, cx + 9, lowEnd - 10, "rod") + line(cx - 9, topJ + 60, cx - 9, lowEnd - 20, "rod"));
+    s += g("octave", path(`M${cx + 8},${topJ + 18} L${cx + 20},${topJ + 22} L${cx + 20},${topJ + 40}`, "keyl") + circ(cx + 20, topJ + 42, 3.4, "s") + path(`M${cx - 8},${topJ + 24} L${cx - 18},${topJ + 28} L${cx - 18},${topJ + 44}`, "keyl") + rect(cx - 22, topJ + 44, 8, 6, "s", 2));
+    const u = [0.45, 0.66, 0.86].map((t) => topJ + t * (250 - topJ));
+    s += g("halfhole", ell(cx, u[0], 6.5, 6, "s") + path(`M${cx - 6.5},${u[0]} A6.5,6 0 0 1 ${cx},${u[0] - 6}`, "k"));
+    s += g("lhkeys", [u[1], u[2]].map((y) => circ(cx, y, 5.5, "s") + circ(cx, y, 2.4, "k")).join(""));
+    s += g("sidekeys", [u[1] - 4, u[1] + 6, u[2] + 2].map((y) => rect(cx + 11, y, 9, 6, "s", 2)).join(""));
+    s += g("rhkeys", [296, 326, 356].map((y) => circ(cx, y, 5.5, "s") + circ(cx, y, 2.4, "k")).join(""));
+    s += g("lpinky", [370, 380, 390].map((y) => rect(cx - 27, y, 14, 7, "s", 2)).join(""));
+    s += g("rpinky", [lowEnd - 34, lowEnd - 24, lowEnd - 14].map((y) => rect(cx + 13, y, 14, 7, "s", 2)).join(""));
     if (eh) s += g("bell", path(`M${cx - 13},410 C${cx - 34},430 ${cx - 34},480 ${cx - 12},492 L${cx - 10},500 L${cx + 10},500 L${cx + 12},492 C${cx + 34},480 ${cx + 34},430 ${cx + 13},410 Z`, "k") + rect(cx - 13, 498, 26, 4, "s"));
     else s += g("bell", path(`M${cx - 13},420 L${cx + 13},420 C${cx + 16},460 ${cx + 22},485 ${cx + 27},500 L${cx - 27},500 C${cx - 22},485 ${cx - 16},460 ${cx - 13},420 Z`, "k") + rect(cx - 28, 498, 56, 4, "s"));
-    const parts = [
-      ["reed", "Double reed", "Two thin blades of cane tied together. They vibrate against each other when the player blows.", cx + 5, rTop + 12],
-    ];
+    s += g("bellkey", line(cx + 9, lowEnd - 6, cx + 9, lowEnd + 22, "rod") + circ(cx + 2, lowEnd + 24, 5.5, "s"));
+    const parts = [["reed", "Double reed", "Two thin blades of cane tied together. They vibrate against each other when the player blows.", cx + 5, rTop + 12]];
     if (eh) parts.push(["bocal", "Bocal", "The short bent metal tube between the reed and the upper joint.", cx + 6, rTop + 80]);
     parts.push(
-      ["upper", "Upper joint", "The left-hand section.", cx - 10, 215],
-      ["octave", "Octave keys", "Keys that help the higher notes speak.", cx + 20, topJ + 54],
-      ["keys", "Keys", "Keys and finger plates that open and close the tone holes.", cx + 5, 300],
-      ["lower", "Lower joint", "The right-hand section.", cx - 12, eh ? 340 : 380],
+      ["octave", "Octave keys", "Two keys that help the upper notes speak, worked by the left thumb and the side of the left index finger.", cx + 20, topJ + 42],
+      ["halfhole", "Half-hole plate", "The left index finger rolls off this plate to open a small vent for some notes in the upper octave.", cx - 6, u[0]],
+      ["lhkeys", "Left-hand keys", "Rings and plates for the left hand's second and third fingers.", cx + 5, u[1]],
+      ["sidekeys", "Side keys", "Small keys on the side of the upper joint for alternate and trill fingerings, such as side F and the C trill.", cx + 20, u[1] + 9],
+      ["upper", "Upper joint", "The left-hand section.", cx - 10, u[2] + 8],
+      ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", cx - 9, 330],
+      ["rhkeys", "Right-hand keys", "Rings and plates for the right hand's first three fingers.", cx + 5, 326],
+      ["lower", "Lower joint", "The right-hand section.", cx - 12, eh ? 300 : 280],
+      ["lpinky", "Left-hand pinky keys", "Keys for low B, B♭, E♭ and left F, worked by the left pinky.", cx - 27, 380],
+      ["rpinky", "Right-hand pinky keys", "Keys for low C, C♯ and E♭, worked by the right pinky.", cx + 27, lowEnd - 24],
       ["bell", eh ? "Bulb bell" : "Bell", eh ? "The pear-shaped bell that gives the English horn its covered, mellow sound." : "The flared end where the sound comes out.", eh ? cx + 28 : cx + 22, eh ? 455 : 480],
+      ["bellkey", "Low B♭ key", "A key on the bell for the lowest note, low B♭.", cx + 7, lowEnd + 24],
     );
-    return { mode: "v", w: 150, h: 520, draw: () => s, parts, sub: eh ? "An alto oboe pitched in F, a fifth below the oboe. Its reed fits on a bent metal bocal." : "A double-reed woodwind that often gives the tuning A for the orchestra." };
+    return { mode: "v", w: 160, h: 520, draw: () => s, parts, sub: eh ? "An alto oboe pitched in F, a fifth below the oboe. Its reed fits on a bent metal bocal." : "A double-reed woodwind that often gives the tuning A for the orchestra." };
   }
   function bassoon() {
     let s = "";
     s += g("reed", path("M14,124 L36,118 L38,126 L16,132 Z", "reed") + rect(36, 117, 8, 10, "thread", 1));
     s += g("bocal", path("M44,120 C70,112 86,140 82,196 L88,196 C92,136 72,104 44,114 Z", "s"));
     s += g("whisper", path("M80,212 L64,212 L64,226", "keyl") + circ(64, 228, 3.2, "s"));
-    s += g("wing", rect(76, 196, 22, 238, "dw", 3) + rect(75, 194, 24, 5, "s"));
-    s += g("holes", [262, 292, 322].map((y) => circ(87, y, 4.5, "k")).join(""));
     s += g("long", rect(102, 112, 26, 322, "dw", 3) + rect(101, 110, 28, 5, "s"));
     s += g("belljoint", rect(103, 18, 24, 96, "dw", 3) + rect(101, 14, 28, 7, "h", 2));
-    s += g("keys", line(124, 160, 124, 400, "rod") + [180, 230, 280].map((y) => rect(126, y, 12, 6, "s", 2)).join(""));
+    s += g("wing", rect(76, 196, 22, 238, "dw", 3) + rect(75, 194, 24, 5, "s"));
+    s += g("rods", line(124, 160, 124, 420, "rod") + line(80, 240, 80, 420, "rod"));
+    s += g("lthumb", path("M76,246 L62,250", "keyl") + [244, 256, 268].map((y) => rect(54, y, 10, 7, "s", 2)).join(""));
+    s += g("halfhole", circ(87, 262 + 30 - 30, 5.2, "s") + path("M82,262 A5.2,5.2 0 0 1 87,256.8", "k"));
+    s += g("holes", [292, 322].map((y) => circ(87, y, 4.5, "k")).join(""));
+    s += g("lowkeys", [300, 314, 328, 342].map((y) => rect(128, y, 14, 9, "s", 3)).join(""));
     s += g("boot", rect(72, 432, 60, 92, "dw", 8) + rect(70, 430, 64, 5, "s") + rect(84, 520, 36, 8, "s", 3));
+    s += g("rhkeys", [452, 474, 496].map((y) => circ(118, y, 4.5, "k")).join(""));
+    s += g("rthumb", [446, 458, 470, 482].map((y) => rect(132, y, 13, 8, "s", 3)).join(""));
+    s += g("pinky", [498, 508].map((y) => rect(56, y, 16, 7, "s", 2)).join("") + [404, 414].map((y) => rect(64, y, 12, 7, "s", 2)).join(""));
     s += g("handrest", path("M70,448 L50,452 L50,476 L70,476", "keyl"));
     return {
-      mode: "v", w: 220, h: 560, draw: () => s, sub: "The bass of the double-reed family. The tube folds back on itself, so it is about 2.5 meters long.",
+      mode: "v", w: 230, h: 560, draw: () => s, sub: "The bass of the double-reed family. The tube folds back on itself, so it is about 2.5 meters long. Its thumbs work more keys than any other woodwind.",
       parts: [
+        ["belljoint", "Bell joint", "The top section where the sound comes out.", 127, 60],
         ["reed", "Double reed", "A large double reed of cane that fits on the end of the bocal.", 24, 126],
         ["bocal", "Bocal", "The curved metal tube that connects the reed to the instrument.", 82, 160],
         ["whisper", "Whisper key", "Closes a tiny vent on the bocal to help low notes speak. Worked by the left thumb.", 64, 228],
+        ["lthumb", "Left-thumb keys (wing)", "Flick keys and the C♯ key on the wing joint, used for high notes and clean slurs.", 54, 256],
+        ["halfhole", "Half-hole", "The first finger hole. The left index finger rolls off it to open half the hole for some upper notes.", 82, 262],
+        ["holes", "Finger holes", "Open holes covered directly by the fingers.", 82, 307],
+        ["lowkeys", "Left-thumb low keys", "Keys on the long joint for low E, D, C and B♭, played by the left thumb.", 142, 321],
+        ["long", "Long joint", "The tall back tube, also called the bass joint.", 128, 230],
         ["wing", "Wing joint", "The shorter front tube with the left-hand finger holes.", 76, 380],
-        ["holes", "Finger holes", "Open holes covered directly by the fingers.", 82, 292],
-        ["long", "Long joint", "The tall back tube, also called the bass joint.", 128, 330],
-        ["belljoint", "Bell joint", "The top section where the sound comes out.", 127, 60],
-        ["keys", "Keys", "Rods and keys worked mostly by the thumbs.", 138, 230],
-        ["boot", "Boot joint", "The U-shaped bottom section where the tube turns around.", 132, 480],
+        ["rods", "Rods (mechanism)", "Metal rods and springs that connect the keys.", 124, 400],
+        ["pinky", "Pinky keys", "Keys for both little fingers, such as left A♭ and F♯ and right F and A♭.", 56, 505],
         ["handrest", "Hand rest", "Supports the right hand. A seat strap or harness holds the weight.", 50, 464],
+        ["rhkeys", "Right-hand holes", "Finger holes on the boot joint for the right hand.", 113, 474],
+        ["rthumb", "Right-thumb keys (boot)", "Keys on the boot for low E, F♯, A♭ and B♭, played by the right thumb.", 145, 464],
+        ["boot", "Boot joint", "The U-shaped bottom section where the tube turns around.", 132, 510],
       ],
     };
   }
@@ -2021,6 +2093,7 @@ const IP = (() => {
       bari: "M60,70 C40,60 40,30 70,26 C100,22 112,44 106,70 L110,124 L124,124 L120,70 C126,36 104,12 70,14 C30,18 30,70 62,80 Z",
     }[kind];
     const mp = { alto: [30, 50, 60, 70], tenor: [28, 34, 58, 50], bari: [34, 64, 62, 84] }[kind];
+    const px = (y) => 118 + (y - 128) * 0.02;
     s += g("mouthpiece", path(`M${mp[0]},${mp[1]} L${mp[2]},${mp[1] - 6} L${mp[2] + 2},${mp[3] - 6} L${mp[0] + 2},${mp[3]} Z`, "k"));
     s += g("reed", path(`M${mp[0] + 2},${mp[3]} L${mp[2] + 2},${mp[3] - 6} L${mp[2] + 2},${mp[3] - 2} L${mp[0] + 4},${mp[3] + 3} Z`, "reed"));
     s += g("ligature", path(`M${mp[0] + 12},${mp[1] - 3} L${mp[0] + 20},${mp[1] - 5} L${mp[0] + 22},${mp[3] - 2} L${mp[0] + 14},${mp[3]} Z`, "s"));
@@ -2028,9 +2101,15 @@ const IP = (() => {
     s += g("octave", kind === "bari" ? path("M100,40 C112,46 116,60 116,80", "keyl") + circ(116, 82, 3.5, "s") : path("M84,52 C100,54 110,68 116,94", "keyl") + circ(116, 96, 3.5, "s"));
     s += g("neckscrew", rect(108, 120, 20, 8, "s", 2) + circ(132, 124, 4, "s"));
     s += g("body", path("M108,128 L128,128 L140,400 L98,400 Z", "b"));
-    s += g("pearls", [170, 200, 230, 290, 320, 350].map((y) => circ(118 + (y - 128) * 0.02, y, 7, "s") + circ(118 + (y - 128) * 0.02, y, 4, "pearl")).join(""));
+    s += g("palm", [140, 151, 162].map((y, i) => ell(100 - i, y, 7, 4.2, "s", -20)).join(""));
+    s += g("frontf", ell(px(156), 156, 4.2, 3, "s"));
+    s += g("pearls", [170, 204, 230, 290, 320, 350].map((y) => circ(px(y), y, 7, "s") + circ(px(y), y, 4, "pearl")).join(""));
+    s += g("bis", circ(px(187), 187, 3, "s") + circ(px(187), 187, 1.7, "pearl"));
     s += g("thumbrest", path("M102,316 L88,316 L88,332 L101,332", "keyl"));
     s += g("strapring", circ(100, 188, 5, "n") + rect(102, 184, 6, 8, "s"));
+    s += g("table", path("M127,246 L138,246 L140,276 L129,276 Z", "s") + line(129,256,139,256,"ln") + line(129,266,139,266,"ln") + line(134, 246, 134, 256, "ln"));
+    s += g("side", [282, 300, 318].map((y) => rect(132, y, 6, 15, "s", 3)).join(""));
+    s += g("rpinky", ell(124, 372, 9, 5, "s") + ell(126, 385, 6, 4, "s"));
     s += g("bow", path("M98,400 C96,470 120,500 150,500 C178,500 196,470 192,430 L170,430 C170,458 162,472 150,472 C134,472 140,440 140,400 Z", "b"));
     s += g("bell", path("M170,430 L192,430 C196,370 210,300 214,250 L150,250 C162,300 168,370 170,430 Z", "b") + ell(182, 250, 33, 7, "b") + ell(182, 250, 26, 4.5, "k"));
     s += g("bellkeys", circ(196, 330, 7, "s") + circ(198, 300, 7, "s") + circ(200, 362, 6, "s"));
@@ -2042,17 +2121,23 @@ const IP = (() => {
       ["neck", "Neck", kind === "tenor" ? "The tenor's neck has a curve (crook) near the mouthpiece." : kind === "bari" ? "The bari's neck has a loop to fit the long tubing." : "The curved tube between mouthpiece and body.", kind === "bari" ? 40 : 84, kind === "bari" ? 44 : 62],
       ["octave", "Octave key", "Opened by the left thumb key to jump to the upper octave.", 116, kind === "bari" ? 82 : 96],
       ["neckscrew", "Neck screw", "Tightens the neck into the body.", 132, 124],
-      ["body", "Body", "The main conical brass tube.", 128, 380],
-      ["pearls", "Pearl keys", "The finger buttons. Pressing them closes pads over the tone holes.", 122, 200],
-      ["thumbrest", "Thumb rest", "Where the right thumb supports the instrument.", 88, 324],
+      ["palm", "Palm keys", "Three keys for high D, E♭ and F, pressed with the palm of the left hand.", 94, 151],
+      ["frontf", "Front F key", "A small key above the first pearl, pressed with the left index finger for high F and above.", px(156) + 4, 156],
+      ["bis", "Bis key", "A tiny pearl between the first two left-hand keys, used for an easy B♭.", px(187) + 3, 187],
       ["strapring", "Strap ring", "Where the neck strap hooks on.", 95, 188],
+      ["pearls", "Pearl keys", "The six main finger buttons. Pressing them closes pads over the tone holes.", px(230) + 6, 230],
+      ["table", "Left pinky table", "A cluster of four keys for the left pinky: G♯, low C♯, low B and low B♭.", 140, 262],
+      ["side", "Side keys", "Keys on the side of the body pressed with the right hand: side C, side B♭ and high E.", 138, 300],
+      ["thumbrest", "Thumb rest", "Where the right thumb supports the instrument.", 88, 324],
+      ["body", "Body", "The main conical brass tube.", 104, 380],
+      ["rpinky", "Right pinky keys", "Low C and low E♭ keys at the bottom of the body.", 133, 372],
       ["bow", "Bow", "The U-shaped bend at the bottom.", 150, 500],
       ["bell", "Bell", "The flared end where the sound comes out.", 212, 260],
-      ["bellkeys", "Bell keys", "Keys for the lowest notes, played by the left pinky.", 200, 330],
+      ["bellkeys", "Bell keys", "Pads for the lowest notes, low B and B♭ (and C♯), worked from the left pinky table.", 200, 330],
       ["keyguard", "Key guard", "A metal guard protecting the low keys.", 160, 470],
     ];
-    const sub = { alto: "An E♭ saxophone and the most common in school bands. Made of brass but played with a reed, so it is a woodwind.", tenor: "A B♭ saxophone, larger than the alto, with a curved crook in its neck.", bari: "An E♭ saxophone an octave below the alto. The tubing loops at the top and it usually adds a low A key." }[kind];
-    return { mode: "v", w: 230, h: 520, draw: () => s, parts, sub };
+    const sub = { alto: "An E♭ saxophone and the most common in school bands. Made of brass but played with a reed, so it is a woodwind.", tenor: "A B♭ saxophone, larger than the alto, with a curved crook in its neck.", bari: "An E♭ saxophone an octave below the alto. The tubing loops at the top, and most add a low A key for the left thumb." }[kind];
+    return { mode: "v", w: 240, h: 520, draw: () => s, parts, sub };
   }
 
   /* ============================================================
